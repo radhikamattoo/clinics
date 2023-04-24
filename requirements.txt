@@ -1,0 +1,7 @@
+pandas
+geocoder
+numpy
+plotly
+xlwt
+openpyxl
+xlsxwriter
