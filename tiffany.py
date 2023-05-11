@@ -10,7 +10,8 @@ from urllib.request import urlopen
 
 def clean_data(kid_df, clinic_df, zipcodes):
     density_to_int_map = {
-        'low': 0.0,
+        'missing': 0.0,
+        'low': 0.33,
         'med': 0.5,
         'medium': 0.5,
         'high': 1.0
@@ -74,39 +75,52 @@ def clean_data(kid_df, clinic_df, zipcodes):
     
 
 def create_map(kid_df, clinic_df, zipcodes):
-    # Create scatter plot of clinic locations
-    # Color the dots based on Acceptance
-    print(f"Generating scatter plot of {clinic_df.shape[0]} clinic locations")
-    clinic_colors = {"conditional": 'black', 'yes': 'white'}
-    fig = px.scatter_mapbox(clinic_df, 
-                            lat="Latitude", 
-                            lon="Longitude", 
-                            hover_name="Address", 
-                            hover_data=["Address", "Density", "Clinic Name", "Acceptance"],
-                            color="Acceptance",
-                            color_discrete_map=clinic_colors,
-                            zoom=8, 
-                            height=800,
-                            width=800)
-    fig.update_layout(mapbox_style="carto-positron")
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    # Hardcode increase the size of the clinic markers for visibility
-    fig.update_traces(marker={'size': 10})
-    
     
     # Create choropleth of zip codes colored based on Density
     print(f"Generating choropleth of {kid_df.shape[0]} zip code densities")
-    fig2 = px.choropleth_mapbox(kid_df, 
+    fig = px.choropleth_mapbox(kid_df, 
                         geojson=zipcodes, 
                         locations='Zip code', 
                         color='Density ',
                         # color_continuous_scale="Greys",
-                        # range_color=(0.0,1.0),
-                        featureidkey="properties.ZIP")
-    fig.add_trace(fig2.data[0])
-    fig2.layout.update(showlegend=False)
+                        color_continuous_scale=[[0.0, "white"], [0.33, "rgb(211, 211, 211)"], [0.5, "rgb(147, 147, 147)"], [1.0, "rgb(103, 103, 103)"]],
+                        featureidkey="properties.ZIP",
+                        zoom=10, 
+                        height=800,
+                        width=800, 
+                        center={'lat': 40.73,'lon':-73.93})
+    fig.update_layout(mapbox_style="carto-positron")
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+        
+    
+    # Create scatter plot of clinic locations
+    # Color the dots based on Acceptance
+    print(f"Generating scatter plot of {clinic_df.shape[0]} clinic locations")
+    clinic_df['colors'] = clinic_df['Acceptance'].apply(lambda x: "rgb(233,233,233)" if x=='conditional' else "black")
+    fig.add_scattermapbox(below="",  
+                          mode="markers",
+                            lat=clinic_df["Latitude"], 
+                            lon=clinic_df["Longitude"], 
+                            # text=clinic_df["Acceptance"], 
+                            # textposition="bottom center",
+                            marker=dict(color="black", size=10),
+                            )    
+    fig.add_scattermapbox(below="",  
+                          mode="text+markers",
+                            lat=clinic_df["Latitude"], 
+                            lon=clinic_df["Longitude"], 
+                            # text=clinic_df["Acceptance"], 
+                            # textposition="bottom center",
+                            marker=dict(color=clinic_df['colors'], size=8),
+                            )
+
+    # for t in fig.data:
+    #     if t.marker:
+    #         t.marker.line.width = 1
+    #         t.marker.line.color = "black"
     print("Rendering...")
     fig.show()  
+    
                          
 
 if __name__ == '__main__':
