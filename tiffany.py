@@ -109,7 +109,7 @@ def create_map(kid_df, clinic_df, zipcodes):
                           mode="text+markers",
                             lat=clinic_df["Latitude"], 
                             lon=clinic_df["Longitude"], 
-                            # text=clinic_df["Acceptance"], 
+                            text=clinic_df["Clinic Name"], 
                             # textposition="bottom center",
                             marker=dict(color=clinic_df['colors'], size=8),
                             )
@@ -139,13 +139,24 @@ if __name__ == '__main__':
             
     if not os.path.exists('./data_cleaned.xlsx'):
         kid_df = pd.read_excel('./data.xlsx', sheet_name='kid data', usecols="A,B",converters={'Zip code':str})
-        clinic_df = pd.read_excel('./data.xlsx', sheet_name='clinic data', usecols="A,B,C,D",converters={'Zip code':str})
+        clinic_df = pd.read_excel('./data.xlsx', sheet_name='clinic data', usecols="A,B,C,D,E,F",converters={'Zip code':str})
         kid_df, clinic_df = clean_data(kid_df, clinic_df, zipcodes)
     else:
-        clinic_df = pd.read_excel('./data_cleaned.xlsx', sheet_name='Clinic Data', usecols="B,C,D,E,F,G,H")
+        clinic_df = pd.read_excel('./data_cleaned.xlsx', sheet_name='Clinic Data', usecols="B,C,D,E,F,G,H,I,J")
         kid_df = pd.read_excel('./data_cleaned.xlsx', sheet_name='Kid Data', usecols="B,C")
         
-
+    # Get df of black dots (acceptance, i.e. anything but 'conditional')
+    black_dots = clinic_df.loc[clinic_df['Acceptance'] == 'yes']
+    print(f"There are {black_dots.shape[0]} clinics with YES")
+    black_dots_with_density = black_dots.loc[black_dots['Density'] != 0.0]
+    print(f"There are {black_dots_with_density.shape[0]} YES clinics in non-0 density zip codes")
+    # print(black_dots_with_density.shape)
+    print(black_dots_with_density.head())
+    # Find how many non-white zip codes actually contain black dots
+    # for idx, row in kid_df.iterrows():
+    #     # print(row)
+    #     zip_code = row['Zip code']
+    #     density = row['Density ']
             
             
     create_map(kid_df, clinic_df, zipcode_geodata)
