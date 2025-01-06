@@ -8,7 +8,7 @@ DEBUG = False
 DATA_DIR = "../data"
 
 
-def generate_choropleth_mapbox(kid_df, zipcodes):
+def generate_zipcode_density_map(kid_df, zipcodes):
     """Generates color-scaled map of NYC Zipcodes and their clinic Density"""
     # Map the density_to_int_map to RGB colors
     density_to_rgb = [
@@ -37,7 +37,7 @@ def generate_choropleth_mapbox(kid_df, zipcodes):
     return fig
 
 
-def generate_scattermapbox(fig, clinic_df):
+def generate_clinic_acceptance_map(fig, clinic_df):
     """Overlays map figure with scatterplot of clinic locations colored by Acceptance."""
     print(f"Generating scatter plot of {clinic_df.shape[0]} clinic locations")
 
@@ -74,9 +74,11 @@ def create_map(
     """Creates choropleth mapbox for Zip Codes based on Density, then overlays with scattermapbox of clinic locations colored by Acceptance."""
     figure_filepath = os.path.join(DATA_DIR, "map.png")
 
-    fig = generate_choropleth_mapbox(kid_df, zipcodes)
+    # Color NYC zip codes based on density
+    fig = generate_zipcode_density_map(kid_df, zipcodes)
 
-    fig = generate_scattermapbox(fig, clinic_df)
+    # Overlay Clinic locations colored by Accpetance
+    fig = generate_clinic_acceptance_map(fig, clinic_df)
 
     if DEBUG:
         print("Rendering...")
