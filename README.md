@@ -20,7 +20,7 @@ From the `src` directory, run:
 ```bash
 python3 tiffany.py
 ```
-This script will process the data excel sheets and generate a map that will popup in your default browser. 
+This script will process the data excel sheets and generate a map that will be saved in the data directory as `map.png`
 
 # Acknowledgements
 Big thank you to Dr. Tiffany Martin for involving me in this project!
