@@ -108,3 +108,28 @@ def clean_data(kid_df, clinic_df, zipcodes, cleaned_filename):
         kid_df.to_excel(writer, sheet_name="Kid Data")
 
     return kid_df, clinic_df
+
+
+def get_cleaned_data(filename: str, cleaned_filename: str, zipcodes: list[str]):
+    """Reads in cleaned excel sheet if exists else reads original data and cleans it. Returns DFs for the Kid and Clinic sheets."""
+    if not os.path.exists(cleaned_filename):
+        kid_df = pd.read_excel(
+            filename,
+            sheet_name="kid data",
+            usecols="A,B",
+            converters={"Zip code": str},
+        )
+        clinic_df = pd.read_excel(
+            filename,
+            sheet_name="clinic data",
+            usecols="A,B,C,D,E,F",
+            converters={"Zip code": str},
+        )
+        kid_df, clinic_df = clean_data(kid_df, clinic_df, zipcodes, cleaned_filename)
+    else:
+        clinic_df = pd.read_excel(
+            cleaned_filename, sheet_name="Clinic Data", usecols="B,C,D,E,F,G,H,I,J"
+        )
+        kid_df = pd.read_excel(cleaned_filename, sheet_name="Kid Data", usecols="B,C")
+
+    return clinic_df, kid_df

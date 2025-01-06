@@ -1,36 +1,30 @@
 #!/usr/bin/env python
 # Radhika Mattoo, radhika095@gmail.com
 import os
-import pandas as pd
 import plotly.express as px
-from utils import clean_data, get_zipcode_data
+from utils import get_zipcode_data, get_cleaned_data
 
 DEBUG = False
 DATA_DIR = "../data"
 
 
-def create_map(
-    kid_df,
-    clinic_df,
-    zipcodes,
-):
-    """Creates choropleth mapbox for Zip Codes based on Density, then overlays with scattermapbox of clinic locations colored by Acceptance."""
-    figure_filepath = os.path.join(DATA_DIR, "map.png")
+def generate_choropleth_mapbox(kid_df, zipcodes):
+    """Generates color-scaled map of NYC Zipcodes and their clinic Density"""
+    # Map the density_to_int_map to RGB colors
+    density_to_rgb = [
+        [0.0, "white"],
+        [0.33, "rgb(211, 211, 211)"],
+        [0.5, "rgb(147, 147, 147)"],
+        [1.0, "rgb(103, 103, 103)"],
+    ]
 
-    # Create choropleth of zip codes colored based on Density
     print(f"Generating choropleth of {kid_df.shape[0]} zip code densities")
     fig = px.choropleth_mapbox(
         kid_df,
         geojson=zipcodes,
         locations="Zip code",
         color="Density ",
-        # Map the density_to_int_map to RGB colors
-        color_continuous_scale=[
-            [0.0, "white"],
-            [0.33, "rgb(211, 211, 211)"],
-            [0.5, "rgb(147, 147, 147)"],
-            [1.0, "rgb(103, 103, 103)"],
-        ],
+        color_continuous_scale=density_to_rgb,
         featureidkey="properties.ZIP",
         zoom=10,
         height=800,
@@ -40,9 +34,14 @@ def create_map(
     fig.update_layout(mapbox_style="carto-positron")
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
-    # Create scatter plot of clinic locations
-    # Color the dots based on Acceptance
+    return fig
+
+
+def generate_scattermapbox(fig, clinic_df):
+    """Overlays map figure with scatterplot of clinic locations colored by Acceptance."""
     print(f"Generating scatter plot of {clinic_df.shape[0]} clinic locations")
+
+    # Color the dots based on Acceptance
     clinic_df["colors"] = clinic_df["Acceptance"].apply(
         lambda x: "rgb(233,233,233)" if x == "conditional" else "black"
     )
@@ -64,6 +63,20 @@ def create_map(
         text=clinic_df["Clinic Name"],
         marker=dict(color=clinic_df["colors"], size=8),
     )
+    return fig
+
+
+def create_map(
+    kid_df,
+    clinic_df,
+    zipcodes,
+):
+    """Creates choropleth mapbox for Zip Codes based on Density, then overlays with scattermapbox of clinic locations colored by Acceptance."""
+    figure_filepath = os.path.join(DATA_DIR, "map.png")
+
+    fig = generate_choropleth_mapbox(kid_df, zipcodes)
+
+    fig = generate_scattermapbox(fig, clinic_df)
 
     if DEBUG:
         print("Rendering...")
@@ -71,31 +84,6 @@ def create_map(
 
     print(f"Saving map to {figure_filepath}")
     fig.write_image(figure_filepath)
-
-
-def get_cleaned_data(filename: str, cleaned_filename: str, zipcodes: list[str]):
-    """Reads in cleaned excel sheet if exists else reads original data and cleans it. Returns DFs for the Kid and Clinic sheets."""
-    if not os.path.exists(cleaned_filename):
-        kid_df = pd.read_excel(
-            filename,
-            sheet_name="kid data",
-            usecols="A,B",
-            converters={"Zip code": str},
-        )
-        clinic_df = pd.read_excel(
-            filename,
-            sheet_name="clinic data",
-            usecols="A,B,C,D,E,F",
-            converters={"Zip code": str},
-        )
-        kid_df, clinic_df = clean_data(kid_df, clinic_df, zipcodes, cleaned_filename)
-    else:
-        clinic_df = pd.read_excel(
-            cleaned_filename, sheet_name="Clinic Data", usecols="B,C,D,E,F,G,H,I,J"
-        )
-        kid_df = pd.read_excel(cleaned_filename, sheet_name="Kid Data", usecols="B,C")
-
-    return clinic_df, kid_df
 
 
 def main():
